@@ -1,0 +1,43 @@
+name: Build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/ccache
+        key: ${{ runner.os }}-ccache
+        restore-keys: |
+          ${{ runner.os }}-ccache
+    - name: Update packages
+      run: sudo apt update && sudo apt upgrade
+    - name: Install Packages
+      run: sudo apt install git fakeroot build-essential ncurses-dev xz-utils libssl-dev bc flex libelf-dev bison ccache
+    - name: Enable ccache
+      run: ccache -M 16
+    - name: Config
+      run: make defconfig
+    - run: |
+        echo 'CONFIG_SYSTEM_TRUSTED_KEYS = ""' >>.config
+        echo "nproc says: $(nproc)"
+        echo "###### ccache stats"
+        cacche -s
+    - name: Make
+      run: make CC="ccache gcc" -j "$(nproc)" bindeb-pkg
+    - name: Save image
+      uses: actions/upload-artifact@v3
+      with:
+          name: deb-packages
+          path: |
+            ../*.deb
