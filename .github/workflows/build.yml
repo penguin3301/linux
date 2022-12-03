@@ -16,7 +16,7 @@ jobs:
     - uses: actions/cache@v3
       with:
         path: |
-          ~/.cache/ccache
+          ~/.ccache
         key: ${{ runner.os }}-ccache
         restore-keys: |
           ${{ runner.os }}-ccache
@@ -31,13 +31,13 @@ jobs:
     - run: |
         echo 'CONFIG_SYSTEM_TRUSTED_KEYS = ""' >>.config
         echo "nproc says: $(nproc)"
-        echo "###### ccache stats"
         ccache -s
     - name: Make
       run: make CC="ccache gcc" -j "$(nproc)" bindeb-pkg
+    - run: ccache -s
     - name: Save image
       uses: actions/upload-artifact@v3
       with:
           name: deb-packages
           path: |
-            ../*.deb
+            /home/runner/work/linux/**/*.deb
